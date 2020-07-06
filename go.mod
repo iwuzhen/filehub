@@ -1,4 +1,4 @@
-module github.com/wzshiming/filehub
+module github.com/iwuzhen/filehub
 
 go 1.12
 

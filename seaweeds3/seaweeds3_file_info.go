@@ -1,4 +1,4 @@
-package awss3
+package seaweeds3
 
 import (
 	"fmt"
@@ -8,27 +8,27 @@ import (
 	"github.com/iwuzhen/filehub"
 )
 
-type AwsS3FileInfo struct {
+type SeaweedS3FileInfo struct {
 	key     *s3.Object
 	filehub filehub.Filehub
 }
 
-func (a *AwsS3FileInfo) Path() string {
+func (a *SeaweedS3FileInfo) Path() string {
 	return *a.key.Key
 }
 
-func (a *AwsS3FileInfo) Size() int64 {
+func (a *SeaweedS3FileInfo) Size() int64 {
 	return *a.key.Size
 }
 
-func (a *AwsS3FileInfo) ModTime() time.Time {
+func (a *SeaweedS3FileInfo) ModTime() time.Time {
 	return *a.key.LastModified
 }
 
-func (a *AwsS3FileInfo) Filehub() filehub.Filehub {
+func (a *SeaweedS3FileInfo) Filehub() filehub.Filehub {
 	return a.filehub
 }
 
-func (a *AwsS3FileInfo) String() string {
+func (a *SeaweedS3FileInfo) String() string {
 	return fmt.Sprintf("%s %s %d", a.Path(), a.ModTime(), a.Size())
 }

@@ -1,4 +1,4 @@
-package awss3
+package seaweeds3
 
 import (
 	"bytes"
@@ -16,15 +16,15 @@ import (
 	"github.com/iwuzhen/filehub"
 )
 
-type AwsS3 struct {
+type SeaweedS3 struct {
 	s3     *s3.S3
 	prefix string
 	bucket string
 	path   string
 }
 
-// awss3://{accessKeyId}:{accessKeySecret}@s3.{bucket}.amazonaws.com/{bucket}/{path}
-func NewAwsS3(remote string) (filehub.Filehub, error) {
+// seaweeds3://{accessKeyId}:{accessKeySecret}@{endPoint}/{bucket}/{path}
+func NewSeaweedS3(remote string) (filehub.Filehub, error) {
 	u, err := url.Parse(remote)
 	if err != nil {
 		return nil, err
@@ -36,19 +36,26 @@ func NewAwsS3(remote string) (filehub.Filehub, error) {
 		accessKeyId = u.User.Username()
 		accessKeySecret, _ = u.User.Password()
 	}
-	log.Println(u)
+	log.Printf("%+v", u)
 	region := strings.TrimSuffix(strings.TrimPrefix(u.Host, "s3."), ".amazonaws.com")
+	endPoint := region
+
+	log.Println("region", region)
 	bucket := ""
 	bpath := ""
 	bucketAndPath := strings.SplitN(strings.TrimPrefix(u.Path, "/"), "/", 2)
 	bucket = bucketAndPath[0]
+	log.Println("bucket", bucket)
 	if len(bucketAndPath) > 1 {
 		bpath = bucketAndPath[1]
 	}
 
 	config := &aws.Config{
-		Region:      &region,
-		Credentials: credentials.NewStaticCredentials(accessKeyId, accessKeySecret, ""),
+		Region:           &region,
+		Credentials:      credentials.NewStaticCredentials(accessKeyId, accessKeySecret, ""),
+		Endpoint:         aws.String(endPoint),
+		DisableSSL:       aws.Bool(true),
+		S3ForcePathStyle: aws.Bool(true), //virtual-host style方式，不要修改
 	}
 	sess, err := session.NewSession(config)
 	if err != nil {
@@ -58,7 +65,9 @@ func NewAwsS3(remote string) (filehub.Filehub, error) {
 	svc := s3.New(sess)
 	bpath = path.Clean(bpath)
 	pat := path.Join(bucket, bpath)
-	return &AwsS3{
+
+	log.Println("Host", `http://`+u.Host+"/"+pat)
+	return &SeaweedS3{
 		prefix: `https://` + u.Host + "/" + pat,
 		s3:     svc,
 		bucket: bucket,
@@ -66,12 +75,13 @@ func NewAwsS3(remote string) (filehub.Filehub, error) {
 	}, nil
 }
 
-func (a *AwsS3) List(pat string) (fs []filehub.FileInfo, err error) {
+func (a *SeaweedS3) List(pat string) (fs []filehub.FileInfo, err error) {
 	var pi *string
 	pat = path.Join(a.path, pat)
 	if pat != "" {
 		pi = &pat
 	}
+	log.Println("pi", *pi)
 	listObjectsV2Output, err := a.s3.ListObjectsV2(&s3.ListObjectsV2Input{
 		Bucket: &a.bucket,
 		Prefix: pi,
@@ -81,7 +91,7 @@ func (a *AwsS3) List(pat string) (fs []filehub.FileInfo, err error) {
 	}
 
 	for _, v := range listObjectsV2Output.Contents {
-		fs = append(fs, &AwsS3FileInfo{
+		fs = append(fs, &SeaweedS3FileInfo{
 			key:     v,
 			filehub: a,
 		})
@@ -89,7 +99,7 @@ func (a *AwsS3) List(pat string) (fs []filehub.FileInfo, err error) {
 	return fs, nil
 }
 
-func (a *AwsS3) Put(pat string, data []byte, contentType string) (p string, err error) {
+func (a *SeaweedS3) Put(pat string, data []byte, contentType string) (p string, err error) {
 	var pi *string
 	pat = path.Join(a.path, pat)
 	if pat != "" {
@@ -107,7 +117,7 @@ func (a *AwsS3) Put(pat string, data []byte, contentType string) (p string, err 
 	return pat, nil
 }
 
-func (a *AwsS3) PutExpire(pat string, data []byte, contentType string, dur time.Duration) (p string, err error) {
+func (a *SeaweedS3) PutExpire(pat string, data []byte, contentType string, dur time.Duration) (p string, err error) {
 	var pi *string
 	pat = path.Join(a.path, pat)
 	if pat != "" {
@@ -127,7 +137,7 @@ func (a *AwsS3) PutExpire(pat string, data []byte, contentType string, dur time.
 	return pat, nil
 }
 
-func (a *AwsS3) Get(pat string) (data []byte, contentType string, err error) {
+func (a *SeaweedS3) Get(pat string) (data []byte, contentType string, err error) {
 	pat = path.Join(a.path, pat)
 	getObjectOutput, err := a.s3.GetObject(&s3.GetObjectInput{
 		Bucket: &a.bucket,
@@ -147,7 +157,7 @@ func (a *AwsS3) Get(pat string) (data []byte, contentType string, err error) {
 	return body, contentType, nil
 }
 
-func (a *AwsS3) Exists(pat string) (exists bool, err error) {
+func (a *SeaweedS3) Exists(pat string) (exists bool, err error) {
 	pat = path.Join(a.path, pat)
 	getObjectOutput, err := a.s3.GetObject(&s3.GetObjectInput{
 		Bucket: &a.bucket,
@@ -160,7 +170,7 @@ func (a *AwsS3) Exists(pat string) (exists bool, err error) {
 	return true, nil
 }
 
-func (a *AwsS3) Del(pat string) error {
+func (a *SeaweedS3) Del(pat string) error {
 	pat = path.Join(a.path, pat)
 	_, err := a.s3.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: &a.bucket,
@@ -172,6 +182,6 @@ func (a *AwsS3) Del(pat string) error {
 	return nil
 }
 
-func (a *AwsS3) Prefix() (string, error) {
+func (a *SeaweedS3) Prefix() (string, error) {
 	return a.prefix, nil
 }

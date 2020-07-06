@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/wzshiming/filehub"
+	"github.com/iwuzhen/filehub"
 )
 
 type AliOssFileInfo struct {

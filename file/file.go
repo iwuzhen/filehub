@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wzshiming/filehub"
+	"github.com/iwuzhen/filehub"
 )
 
 type File string

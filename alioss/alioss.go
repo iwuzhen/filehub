@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"log"
 	"mime"
 	"net/url"
 	"path"
@@ -12,7 +13,7 @@ import (
 	"time"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/wzshiming/filehub"
+	"github.com/iwuzhen/filehub"
 )
 
 type AliOss struct {
@@ -67,6 +68,7 @@ func (a *AliOss) List(pat string) (fs []filehub.FileInfo, err error) {
 	pre := oss.Prefix(pat)
 	maxkey := oss.MaxKeys(1000)
 	for {
+		log.Println(fs)
 		lsRes, err := a.buc.ListObjects(pre, maxkey, marker)
 		if err != nil {
 			return nil, err

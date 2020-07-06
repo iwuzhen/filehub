@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/wzshiming/filehub"
+	"github.com/iwuzhen/filehub"
 )
 
 type FileInfo struct {
